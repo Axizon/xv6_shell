@@ -57,11 +57,11 @@ struct cmd *parsecmd(char*);
 void
 runcmd(struct cmd *cmd)
 {
-  //int p[2];
+  int p[2];
   //struct backcmd *bcmd;
   struct execcmd *ecmd;
   struct listcmd *lcmd;
-  //struct pipecmd *pcmd;
+  struct pipecmd *pcmd;
   //struct redircmd *rcmd;
   
   if(cmd == 0)
@@ -93,7 +93,29 @@ runcmd(struct cmd *cmd)
     break;
 
   case PIPE:
-    printf(2, "Pipe Not implemented\n");
+    pcmd = (struct pipecmd*)cmd; //This struct has left and right
+    pipe(p);
+
+    if(fork1() == 0) {
+      close(1); //Closes standard output
+      dup(p[1]); //Duplicates write end of pipe, writing will send to pipe now
+      close(p[0]);
+      close(p[1]); //No longer necessary after duplication
+      runcmd(pcmd -> left); //Command execution
+    }
+    //Same process as above but for standard input
+    if(fork1() == 0) {
+      close(0); 
+      dup(p[0]);
+      close(p[0]);
+      close(p[1]);
+      runcmd(pcmd -> right);
+    }
+
+    close(p[0]);
+    close(p[1]);
+    wait();
+    wait();
     break;
 
   case BACK:
