@@ -13,6 +13,26 @@
 
 #define MAXARGS 10
 
+char commandhist[10][100];
+void addhist(char* newest);
+void printhist();
+void runhist(int num);
+
+int areEqual(char *x, char* y) {
+  int unequal = 0;
+  while (*x != '\0' || *y != '\0') {
+    if (*x == *y) {
+      x++;
+      y++;
+    }
+    else {
+      unequal = 1;
+      break;
+    }
+  }
+  return unequal;
+}
+
 struct cmd {
   int type;
 };
@@ -75,8 +95,24 @@ runcmd(struct cmd *cmd)
     ecmd = (struct execcmd*)cmd;
     if(ecmd->argv[0] == 0)
       exit();
-    exec(ecmd->argv[0], ecmd->argv);
-    printf(2, "exec %s failed\n", ecmd->argv[0]);
+    char* placeholder1 = "hist";
+    char* placeholder2 = "print";
+    if(areEqual(ecmd->argv[0], placeholder1) == 0) {
+      if(ecmd->argv[1] == 0) {
+	printf(2, "exec %s failed\n", ecmd->argv[0]);
+	break;
+      }
+      else if (areEqual(ecmd->argv[1], placeholder2) == 0) {
+	printhist();
+      }
+      else {
+	runhist(atoi(ecmd->argv[1]));
+      }
+    }
+    else {
+      exec(ecmd->argv[0], ecmd->argv);
+      printf(2, "exec %s failed\n", ecmd->argv[0]);
+    }
     break;
 
   case REDIR:
@@ -149,6 +185,7 @@ main(void)
       break;
     }
   }
+  int pid;
 
   // Read and run input commands.
   while(getcmd(buf, sizeof(buf)) >= 0){
@@ -159,8 +196,11 @@ main(void)
         printf(2, "cannot cd %s\n", buf+3);
       continue;
     }
-    if(fork1() == 0)
+    if((pid = fork1()) == 0)
       runcmd(parsecmd(buf));
+    else if (pid > 0) {
+      addhist(buf);
+    }
     wait();
   }
   exit();
@@ -485,4 +525,42 @@ nulterminate(struct cmd *cmd)
     break;
   }
   return cmd;
+}
+
+void addhist(char* newest) {
+  if(!(newest[0] == 'h' && newest[1] == 'i' && newest[2] == 's' && newest[3] == 't' && newest[4])) {
+    for (int i = 9; i > 0; i--) {
+      strcpy(commandhist[i], commandhist[i-1]);
+    }
+    strcpy(commandhist[0], newest);
+    commandhist[0][strlen(commandhist[0]) - 1] = 0;
+  }
+  else {
+    int insert = 0;
+    for (int i = 0; i < strlen(newest); i++) {
+      if (newest[i] == ';' || newest[i] == '>' || newest[i] == '<' || newest[i] == '|') {
+	insert = 1;
+      }
+    }
+    if (insert) {
+      for (int i = 9; i > 0; i--) {
+	strcpy(commandhist[i], commandhist[i-1]);
+      }
+      strcpy(commandhist[0], newest);
+      commandhist[0][strlen(commandhist[0]) - 1] = 0;
+    }
+  }
+}
+
+void printhist() {
+  for (int i = 0; i < 10; i++) {
+    printf(2, "Previous command %d: %s\n", i+1, commandhist[i]);
+  }
+}
+
+void runhist(int num) {
+  if(fork1() == 0) {
+    runcmd(parsecmd(commandhist[num - 1]));
+  }
+  wait();
 }
