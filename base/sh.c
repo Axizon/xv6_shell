@@ -13,12 +13,12 @@
 
 #define MAXARGS 10
 
-char commandhist[10][100];
+char commandhist[10][100]; //stores command history
 void addhist(char* newest);
 void printhist();
 void runhist(int num);
 
-int areEqual(char *x, char* y) {
+int areEqual(char *x, char* y) { //checks strings instead of pointers
   int unequal = 0;
   while (*x != '\0' || *y != '\0') {
     if (*x == *y) {
@@ -97,16 +97,16 @@ runcmd(struct cmd *cmd)
       exit();
     char* placeholder1 = "hist";
     char* placeholder2 = "print";
-    if(areEqual(ecmd->argv[0], placeholder1) == 0) {
-      if(ecmd->argv[1] == 0) {
+    if(areEqual(ecmd->argv[0], placeholder1) == 0) { //checks if the cmd is a hist cmd
+      if(ecmd->argv[1] == 0) { //no argument = failure
 	printf(2, "exec %s failed\n", ecmd->argv[0]);
 	break;
       }
-      else if (areEqual(ecmd->argv[1], placeholder2) == 0) {
-	printhist();
+      else if (areEqual(ecmd->argv[1], placeholder2) == 0) { //checks if the cmd is a hist print cmd
+	printhist(); //prints hist 
       }
       else {
-	runhist(atoi(ecmd->argv[1]));
+	runhist(atoi(ecmd->argv[1])); //runs hist
       }
     }
     else {
@@ -117,23 +117,23 @@ runcmd(struct cmd *cmd)
 
   case REDIR:
     rcmd = (struct redircmd*)cmd;
-    close(rcmd->fd);
-    if(open(rcmd->file, rcmd->mode) < 0){
-      printf(2, "failed\n");
+    close(rcmd->fd); //close the necessary fd
+    if(open(rcmd->file, rcmd->mode) < 0){ //open the necessary file (will automatically fill empty fd)
+      printf(2, "failed\n"); //if it didn't work for some reason (?)
       exit();
     }
     else {
-      runcmd(rcmd->cmd);
+      runcmd(rcmd->cmd); //run the command now that redirc has been set up
     }
     break;
 
   case LIST:
     lcmd = (struct listcmd*)cmd;
-    if (fork1() == 0) {
-      runcmd(lcmd->left);
+    if (fork1() == 0) { //in child
+      runcmd(lcmd->left); //run the left function
     }
-    wait();
-    runcmd(lcmd->right);
+    wait(); //wait for execution completion (in parent)
+    runcmd(lcmd->right); //then run the right
     break;
 
   case PIPE:
@@ -207,7 +207,7 @@ main(void)
     if((pid = fork1()) == 0)
       runcmd(parsecmd(buf));
     else if (pid > 0) {
-      addhist(buf);
+      addhist(buf); //attempts to adds command to history (if in parent)
     }
     wait();
   }
@@ -536,17 +536,17 @@ nulterminate(struct cmd *cmd)
 }
 
 void addhist(char* newest) {
-  if(!(newest[0] == 'h' && newest[1] == 'i' && newest[2] == 's' && newest[3] == 't' && newest[4])) {
+  if(!(newest[0] == 'h' && newest[1] == 'i' && newest[2] == 's' && newest[3] == 't' && newest[4])) { //checks if not hist (so it can add to history)
     for (int i = 9; i > 0; i--) {
-      strcpy(commandhist[i], commandhist[i-1]);
+      strcpy(commandhist[i], commandhist[i-1]); //shifts command history down
     }
     strcpy(commandhist[0], newest);
-    commandhist[0][strlen(commandhist[0]) - 1] = 0;
+    commandhist[0][strlen(commandhist[0]) - 1] = 0; //save newest
   }
-  else {
+  else { //if command IS a hist, must check for complex (multiple) command
     int insert = 0;
     for (int i = 0; i < strlen(newest); i++) {
-      if (newest[i] == ';' || newest[i] == '>' || newest[i] == '<' || newest[i] == '|') {
+      if (newest[i] == ';' || newest[i] == '>' || newest[i] == '<' || newest[i] == '|') { //checks if there are compounded commands, if so, save to history
 	insert = 1;
       }
     }
@@ -562,13 +562,15 @@ void addhist(char* newest) {
 
 void printhist() {
   for (int i = 0; i < 10; i++) {
-    printf(2, "Previous command %d: %s\n", i+1, commandhist[i]);
+    printf(2, "Previous command %d: %s\n", i+1, commandhist[i]); //prints command history
   }
 }
 
 void runhist(int num) {
-  if(fork1() == 0) {
-    runcmd(parsecmd(commandhist[num - 1]));
+  if (num > 0 && num < 11) { //ensures number is within 10 command history
+    if(fork1() == 0) {
+      runcmd(parsecmd(commandhist[num - 1])); //runs corresponding command
+    }
   }
   wait();
 }
