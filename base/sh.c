@@ -12,6 +12,10 @@
 #define BACK  5
 
 #define MAXARGS 10
+#define MAX_BG_PROCS 10 
+
+int bg_pids[MAX_BG_PROCS];
+int bg_count = 0;
 
 char commandhist[10][100]; //stores command history
 void addhist(char* newest);
@@ -69,6 +73,17 @@ struct backcmd {
   struct cmd *cmd;
 };
 
+//waitpid() implementation
+  int waitpid(int pid) {
+  int wpid;
+  while ((wpid = wait()) >= 0) {
+    if (wpid == pid) {
+      return wpid;
+    }
+  }
+  return -1;
+}
+
 int fork1(void);  // Fork but panics on failure.
 void panic(char*);
 struct cmd *parsecmd(char*);
@@ -78,7 +93,7 @@ void
 runcmd(struct cmd *cmd)
 {
   int p[2];
-  //struct backcmd *bcmd;
+  struct backcmd *bcmd;
   struct execcmd *ecmd;
   struct listcmd *lcmd;
   struct pipecmd *pcmd;
@@ -163,11 +178,22 @@ runcmd(struct cmd *cmd)
     break;
 
   case BACK:
-    printf(2, "Backgrounding not implemented\n");
-    break;
+    bcmd = (struct backcmd*)cmd;
+      int pid = fork1();  //Declare and get the PID of the child process
+      if(pid == 0) {
+      runcmd(bcmd->cmd);  //Execute the background command in the child
+       } else {
+        //Parent process records the PID of the background process
+       if (bg_count < MAX_BG_PROCS) {
+      bg_pids[bg_count++] = pid;
+    } else {
+      printf(2, "Too many background processes\n");
+    }
   }
+  break;
+    }
   exit();
-}
+  }
 
 int
 getcmd(char *buf, int nbuf)
@@ -204,12 +230,28 @@ main(void)
         printf(2, "cannot cd %s\n", buf+3);
       continue;
     }
-    if((pid = fork1()) == 0)
+    //If the command is background fork and execute asynchronously.
+    if((pid = fork1()) == 0) {
       runcmd(parsecmd(buf));
-    else if (pid > 0) {
-      addhist(buf); //attempts to adds command to history (if in parent)
+    } else if (pid > 0) {
+      //Parent process handles background processes
+      addhist(buf);
+      wait();  //Wait for the non background process to finish
+
+      //Reap background processes
+      for (int i = 0; i < bg_count; i++) {
+        int bg_pid = bg_pids[i];
+        int status = waitpid(bg_pid);
+        if (status >= 0) {
+          // Remove the reaped process from the list.
+          for (int j = i; j < bg_count - 1; j++) {
+            bg_pids[j] = bg_pids[j + 1];
+          }
+          bg_count--;
+          i--;  //Adjust index in array
+        }
+      }
     }
-    wait();
   }
   exit();
 }
