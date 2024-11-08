@@ -1,0 +1,39 @@
+//IMPLEMENTATIONS
+# Multiple commands in the same line
+  - When dealing with a list, runcmd() will fork().
+  - The child will call runcmd() to execute the leftmost command in a listcmd struct.
+  - The parent will call runcmd() and continue processing the remainder (right side) of the list.
+  - This continues until all the commands in a list are processed.
+  
+# Command pipeline
+  -
+  
+# Input and output redirection
+  - Using the information already in the redircmd struct, we close the necesarry file descriptor entry.
+  - We then open() the relevant file with the needed arguments from redircmd's file and mode variables.
+  - We then call runcmd() to execute the cmd specified.
+  
+# Command background execution
+
+# Command history
+  - In the main() function, the forked child moves to execution while the parent calls addhist().
+  - addhist() adds the user input to an array of commands stored within sh.c (if the input is not a basic hist command).
+  - addhist() also updates the array to delete the oldest command so that only 10 are stored at a time.
+  - When executing a command in runcmd(), check to see if it is hist print or hist 1-10.
+  - If so, call either printhist() to print the history list or runhist() to call runcmd() for the command from history
+
+//CONTRIBUTIONS
+# Evan
+  - Implemented lists (multiple commands in the same line) in its entirety (with debugging)
+  - Implemented command history in its entirety (with debugging)
+  - Did some debugging and adjustments for input/output redirection
+  - Ran test cases and checked thoroughly for correctness
+
+#Johnny
+  - 
+
+#Manika
+  -
+
+#Nicholas
+  -
