@@ -6,7 +6,12 @@
   - This continues until all the commands in a list are processed.
   
 # Command pipeline
-  -
+  - Casting cmd to pipecmd struct allows for getting of left and right arguments of the pipe 
+  - Create pipe with p[0] as as read end and p[1] as write end
+  - Create child process that runs the command to the left of pipe
+  - Command running process is with done with runcmd after changing output to pipe rather than terminal
+  - Same process is repeated for the right side of the pipe but instead of changing output, input is changed to read from pipe
+  - Close pipes and wait for the child processes to finish executing
   
 # Input and output redirection
   - Using the information already in the redircmd struct, we close the necesarry file descriptor entry.
@@ -30,7 +35,9 @@
   - Ran test cases and checked thoroughly for correctness
 
 #Johnny
-  - 
+  - Implemented command pipeline
+  - Debugging multiple input pipes
+  - Ran test cases and checked thoroughly for correctness
 
 # Manika
   - Implemented input/output redirection
