@@ -32,7 +32,7 @@
 #Johnny
   - 
 
-#Manika
+# Manika
   - Implemented input/output redirection
   - Ran some test cases and checked thoroughly for correctness
 
