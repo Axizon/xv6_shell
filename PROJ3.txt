@@ -34,7 +34,7 @@
 
 # Manika
   - Implemented input/output redirection
-  - Ran some test cases and checked thoroughly for correctness
+  - Ran test cases and checked thoroughly for correctness
 
 #Nicholas
   -
