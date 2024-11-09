@@ -44,4 +44,6 @@
   - Ran test cases and checked thoroughly for correctness
 
 #Nicholas
-  -
+  - Implemented Command Background execution
+  - Debugged issues stemming from zombie processes
+  - Ran test cases and checked thoroughly for correctness
